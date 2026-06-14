@@ -3,10 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect, useState, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 import { useWeatherStore } from '../../store/weatherStore';
 import { WeatherType } from '../../types';
+import { animate } from 'framer-motion';
 import { 
   Sun, 
   CloudRain, 
@@ -63,10 +64,59 @@ export function getWeatherAtTime(baseWeather: WeatherType, hour: number): Weathe
 }
 
 export const TimeSlider: React.FC = () => {
-  const { selectedTime, setSelectedTime } = useApp();
+  const { selectedTime, setSelectedTime, syncToCurrentTime } = useApp();
   const { weatherData } = useWeatherStore();
   
   const baseWeather = weatherData?.weatherType || 'clear';
+
+  // State to track actual real current local time from Date clock
+  const [actualCurrentTime, setActualCurrentTime] = useState(() => {
+    const d = new Date();
+    return d.getHours() * 60 + d.getMinutes();
+  });
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const d = new Date();
+      setActualCurrentTime(d.getHours() * 60 + d.getMinutes());
+    }, 15000); // Poll actual clock every 15 seconds
+    return () => clearInterval(timer);
+  }, []);
+
+  const isLive = Math.abs(selectedTime - actualCurrentTime) <= 5; // true if within 5-min threshold
+
+  const animationControlsRef = useRef<any>(null);
+
+  const handleLiveSync = () => {
+    if (animationControlsRef.current) {
+      animationControlsRef.current.stop();
+    }
+
+    const d = new Date();
+    const targetVal = d.getHours() * 60 + d.getMinutes();
+
+    // Smoothly animate range input handle coordinates using spring solver
+    animationControlsRef.current = animate(selectedTime, targetVal, {
+      type: 'spring',
+      stiffness: 85,
+      damping: 15,
+      onUpdate: (latest) => {
+        setSelectedTime(Math.round(latest));
+      },
+      onComplete: () => {
+        syncToCurrentTime();
+        animationControlsRef.current = null;
+      }
+    });
+  };
+
+  useEffect(() => {
+    return () => {
+      if (animationControlsRef.current) {
+        animationControlsRef.current.stop();
+      }
+    };
+  }, []);
 
   // Format time (minutes) to HH:MM format
   const formattedTime = useMemo(() => {
@@ -102,12 +152,32 @@ export const TimeSlider: React.FC = () => {
 
   return (
     <div className="w-full mt-6 bg-white/[0.03] border border-white/5 rounded-2xl p-4 backdrop-blur-md">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-3">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-3">
         <span className="text-indigo-300 font-mono text-[10px] tracking-widest uppercase flex items-center gap-1.5 leading-none">
           <Clock className="w-3.5 h-3.5 text-indigo-400 animate-pulse" />
           DIURNAL TIMELINE SLIDER (24h)
         </span>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* Elegant "Live" synchronization activator button */}
+          <button
+            onClick={handleLiveSync}
+            id="btn-live-sync-time"
+            title="Sync to true current local time"
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-[10px] font-semibold font-mono tracking-wider uppercase transition-all duration-300 backdrop-blur-md cursor-pointer select-none ${
+              isLive
+                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.12)]'
+                : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10 hover:border-white/18 active:scale-95'
+            }`}
+          >
+            <span className="relative flex h-2 w-2">
+              {isLive && (
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              )}
+              <span className={`relative inline-flex rounded-full h-2 w-2 transition-colors duration-300 ${isLive ? 'bg-emerald-500' : 'bg-slate-400'}`}></span>
+            </span>
+            <span>{isLive ? 'LIVE' : 'SYNC TIME'}</span>
+          </button>
+
           <span className="text-[10px] font-mono text-white/40 uppercase">ACTIVE TIME:</span>
           <span className="px-2.5 py-1 text-xs font-bold font-mono tracking-wider rounded-lg bg-black/40 border border-white/10 text-emerald-400 shadow-inner">
             {formattedTime}

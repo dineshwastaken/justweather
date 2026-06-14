@@ -100,18 +100,12 @@ export const RainSystem: React.FC<RainSystemProps> = ({ windSpeed, density, inte
 
   return (
     <instancedMesh ref={meshRef} args={[null as any, null as any, count]} castShadow>
-      <cylinderGeometry args={[0.06, 0.06, 1.2, 4]} />
-      <meshPhysicalMaterial
-        color="#ffffff"
-        roughness={0.05}
-        metalness={0.1}
-        transmission={0.8} // highly refractive glass/water property
-        thickness={0.8}    // refraction thickness
-        ior={1.333}        // index of refraction for water
-        clearcoat={1.0}
-        clearcoatRoughness={0.05}
+      <boxGeometry args={[0.12, 1.5, 0.12]} />
+      <meshBasicMaterial
+        color="#bae6fd"
         transparent
-        opacity={0.45}
+        opacity={0.65}
+        blending={THREE.AdditiveBlending}
         depthWrite={false}
       />
     </instancedMesh>

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useEffect } from 'react';
+import { useEffect, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   CloudSun, 
@@ -13,13 +13,16 @@ import {
   CloudFog
 } from 'lucide-react';
 import { useWeatherStore } from './store/weatherStore';
-import WeatherScene from './components/Canvas/WeatherScene';
 import LocationManager from './components/Search/LocationManager';
 import InteractionManager from './components/Canvas/InteractionManager';
 import CurrentWeather from './components/UI/CurrentWeather';
 import ForecastTimeline from './components/UI/ForecastTimeline';
 import NowcastAlert from './components/UI/NowcastAlert';
 import { AppProvider, useApp } from './context/AppContext';
+import FeedbackWidget from './components/UI/FeedbackWidget';
+import GlassSkeleton from './components/UI/GlassSkeleton';
+
+const WeatherScene = lazy(() => import('./components/Canvas/WeatherScene'));
 
 function WeatherAppContent() {
   const { currentLocation } = useApp();
@@ -44,11 +47,13 @@ function WeatherAppContent() {
       
       {/* 1. Interactive 3D WebGL Canvas Layer */}
       {weatherData && (
-        <WeatherScene 
-          weatherType={weatherData.weatherType}
-          windSpeed={weatherData.windSpeed}
-          windDirection={weatherData.windDirection}
-        />
+        <Suspense fallback={null}>
+          <WeatherScene 
+            weatherType={weatherData.weatherType}
+            windSpeed={weatherData.windSpeed}
+            windDirection={weatherData.windDirection}
+          />
+        </Suspense>
       )}
 
       {/* 2. Complex Atmospheric Interactive Blur Overlay (blends R3F smoothly into card grids) */}
@@ -89,29 +94,15 @@ function WeatherAppContent() {
         <main className="w-full flex-grow flex flex-col justify-center items-center py-6">
           <AnimatePresence mode="wait">
             {isLoading ? (
-              // 4. Fluid Loading Stage
+              // 4. Fluid Loading Stage (Liquid Glass Skeleton loaders matching exact UI specs)
               <motion.div 
                 key="loader"
-                initial={{ opacity: 0, scale: 0.95 }}
+                initial={{ opacity: 0, scale: 0.98 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0 }}
-                className="flex flex-col items-center justify-center pointer-events-auto h-96 z-50 text-center"
+                className="w-full flex flex-col justify-start items-center pointer-events-auto z-50 text-center"
               >
-                <div className="relative mb-6">
-                  {/* Glowing neon loaders */}
-                  <motion.div 
-                    animate={{ rotate: 360 }}
-                    transition={{ repeat: Infinity, ease: 'linear', duration: 3 }}
-                    className="w-16 h-16 rounded-full border border-indigo-500 border-t-transparent shadow-[0_0_20px_rgba(99,102,241,0.5)] flex items-center justify-center"
-                  />
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <CloudSun className="w-6 h-6 text-indigo-400 animate-pulse" />
-                  </div>
-                </div>
-                <h3 className="text-white font-sans text-lg font-bold tracking-tight">Acquiring Doppler Grid...</h3>
-                <p className="text-white/40 text-xs font-mono mt-1.5 uppercase tracking-widest max-w-xs leading-relaxed">
-                  Resolving Meteorological Satellites CORS-free for {currentLocation.name}
-                </p>
+                <GlassSkeleton />
               </motion.div>
             ) : error ? (
               // 5. Fatal Error Stage (Bypassed normally by climatic fallbacks)
@@ -169,6 +160,9 @@ function WeatherAppContent() {
         </footer>
 
       </div>
+
+      {/* 4. Elegant Serverless Multi-Action Micro-Feedback Panel */}
+      <FeedbackWidget />
     </div>
   );
 }

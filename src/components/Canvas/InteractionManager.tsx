@@ -28,11 +28,27 @@ export const InteractionManager: React.FC = () => {
   const clickStartRef = useRef<number>(0);
 
   useEffect(() => {
+    const handleGestureMove = (clientX: number, clientY: number) => {
+      const x = (clientX / window.innerWidth) * 2 - 1;
+      const y = -(clientY / window.innerHeight) * 2 + 1;
+      setInteractionState(prev => ({
+        ...prev,
+        mousePosition: { x, y }
+      }));
+    };
+
     const handleGestureStart = (clientX: number, clientY: number) => {
       clickStartRef.current = Date.now();
       isHeldRef.current = false;
       
-      setInteractionState(prev => ({ ...prev, isPressing: true }));
+      const x = (clientX / window.innerWidth) * 2 - 1;
+      const y = -(clientY / window.innerHeight) * 2 + 1;
+      
+      setInteractionState(prev => ({ 
+        ...prev, 
+        isPressing: true,
+        mousePosition: { x, y }
+      }));
 
       // Set timeout for trigger of "Long Press"
       pressTimeoutRef.current = setTimeout(() => {
@@ -117,6 +133,10 @@ export const InteractionManager: React.FC = () => {
       handleGestureEnd();
     };
 
+    const onMouseMove = (e: MouseEvent) => {
+      handleGestureMove(e.clientX, e.clientY);
+    };
+
     // Global mobile touch event hookups
     const onTouchStart = (e: TouchEvent) => {
       const target = e.target as HTMLElement;
@@ -130,17 +150,27 @@ export const InteractionManager: React.FC = () => {
       handleGestureEnd();
     };
 
+    const onTouchMove = (e: TouchEvent) => {
+      if (e.touches.length > 0) {
+        handleGestureMove(e.touches[0].clientX, e.touches[0].clientY);
+      }
+    };
+
     window.addEventListener('mousedown', onMouseDown);
     window.addEventListener('mouseup', onMouseUp);
+    window.addEventListener('mousemove', onMouseMove);
     window.addEventListener('touchstart', onTouchStart, { passive: true });
     window.addEventListener('touchend', onTouchEnd, { passive: true });
+    window.addEventListener('touchmove', onTouchMove, { passive: true });
 
     return () => {
       if (pressTimeoutRef.current) clearTimeout(pressTimeoutRef.current);
       window.removeEventListener('mousedown', onMouseDown);
       window.removeEventListener('mouseup', onMouseUp);
+      window.removeEventListener('mousemove', onMouseMove);
       window.removeEventListener('touchstart', onTouchStart);
       window.removeEventListener('touchend', onTouchEnd);
+      window.removeEventListener('touchmove', onTouchMove);
     };
   }, [activeWeather, setInteractionState]);
 

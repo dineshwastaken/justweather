@@ -263,19 +263,22 @@ const AtmosphericSparkle: React.FC<{ speed: number; color?: string }> = ({ speed
     return [pos, ph];
   }, [count]);
 
-  useFrame((state) => {
+  useFrame((state, delta) => {
     if (!pointsRef.current) return;
     const time = state.clock.getElapsedTime();
     const posAttr = pointsRef.current.geometry.attributes.position;
     
+    // Normalize to 60 FPS baseline speed factor
+    const speedFactor = delta * 60;
+    
     for (let i = 0; i < count; i++) {
       let y = posAttr.getY(i);
-      y += Math.sin(time + phases[i]) * 0.005 * speed;
+      y += Math.sin(time + phases[i]) * 0.005 * speed * speedFactor;
       if (y > 15) y = -15;
       posAttr.setY(i, y);
 
       let x = posAttr.getX(i);
-      x += Math.cos(time * 0.5 + phases[i]) * 0.003 * speed;
+      x += Math.cos(time * 0.5 + phases[i]) * 0.003 * speed * speedFactor;
       posAttr.setX(i, x);
     }
     posAttr.needsUpdate = true;
@@ -328,12 +331,18 @@ const CelestialBody: React.FC<{ type: WeatherType; hour: number; flareScaleMulti
     }
   }, [hour, isDay]);
 
-  useFrame((state) => {
+  const lerpedPos = useRef(new THREE.Vector3(0, 5, -14));
+
+  useFrame((state, delta) => {
     if (!orbRef.current) return;
     const elapsed = state.clock.getElapsedTime();
     
+    // Smooth interpolation to prevent sudden celestial snapping on sync
+    const lerpFactor = Math.min(1.0, delta * 6.0);
+    lerpedPos.current.lerp(celestialCoordinates, lerpFactor);
+    
     // Smooth magnetic float offset
-    orbRef.current.position.copy(celestialCoordinates);
+    orbRef.current.position.copy(lerpedPos.current);
     orbRef.current.position.y += Math.sin(elapsed * 0.1) * 0.25;
     
     if (!isDay && type === 'clear') {
@@ -478,12 +487,22 @@ const EnvironmentContent: React.FC<WeatherSceneProps> = ({ weatherType, windSpee
   const [isLongPressingCloudy, setIsLongPressingCloudy] = useState(false);
   const [isFogCleared, setIsFogCleared] = useState(false);
 
+  const dirLightRef = useRef<THREE.DirectionalLight>(null);
+  const lerpedCelestialPos = useRef(new THREE.Vector3(0, 5, -14));
+
   // Synchronise camera with soft wind gusts and cursor sway
-  useFrame((state) => {
+  useFrame((state, delta) => {
     const elapsed = state.clock.getElapsedTime();
     const windPush = windSpeed / 130;
     camera.position.x = Math.sin(elapsed * 0.12) * (0.5 + windPush) + mousePosition.x * 0.45;
     camera.position.y = Math.cos(elapsed * 0.08) * 0.3 + mousePosition.y * 0.35;
+
+    // Smooth celestial directional light translation to prevent snapping
+    const lerpFactor = Math.min(1.0, delta * 6.0);
+    lerpedCelestialPos.current.lerp(celestialCoordinates, lerpFactor);
+    if (dirLightRef.current) {
+      dirLightRef.current.position.copy(lerpedCelestialPos.current);
+    }
   });
 
   // Track event triggers from the InteractionManager
@@ -685,6 +704,7 @@ const EnvironmentContent: React.FC<WeatherSceneProps> = ({ weatherType, windSpee
 
       <ambientLight color={moodTheme.ambientColor} intensity={moodTheme.ambientIntensity + activeFlashStrength * 0.35} />
       <directionalLight 
+        ref={dirLightRef}
         position={[celestialCoordinates.x, celestialCoordinates.y, celestialCoordinates.z]} 
         intensity={moodTheme.directionalIntensity + activeFlashStrength * 0.65} 
         color={activeFlashStrength > 0 ? '#f0f9ff' : moodTheme.directionalColor}

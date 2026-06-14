@@ -20,12 +20,13 @@ interface AppContextType {
   setSelectedTime: (time: number) => void;
   predictedTemperature: number;
   setPredictedTemperature: (temp: number) => void;
+  syncToCurrentTime: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { selectCity, weatherData } = useWeatherStore();
+  const { selectCity, weatherData, refreshWeather } = useWeatherStore();
 
   const getIndore = (): CityConfig => {
     return INDIAN_CITIES.find(c => c.id === 'indore') || {
@@ -41,8 +42,57 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const initialBangalore = INDIAN_CITIES.find(c => c.id === 'bangalore') || INDIAN_CITIES[0];
   const initialIndore = getIndore();
 
-  const [currentLocation, setCurrentLocationState] = useState<CityConfig>(initialBangalore);
-  const [savedLocations, setSavedLocations] = useState<CityConfig[]>([]);
+  const isValidCityConfig = (obj: any): obj is CityConfig => {
+    return (
+      obj &&
+      typeof obj === 'object' &&
+      typeof obj.id === 'string' &&
+      typeof obj.name === 'string' &&
+      typeof obj.state === 'string' &&
+      typeof obj.lat === 'number' &&
+      typeof obj.lng === 'number'
+    );
+  };
+
+  const getSavedLocationsFromStorage = (): CityConfig[] | null => {
+    try {
+      const saved = localStorage.getItem('justweather_saved_locations');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.every(isValidCityConfig)) {
+          return parsed;
+        }
+      }
+    } catch (e) {
+      console.error('Error parsing saved locations from localStorage', e);
+    }
+    return null;
+  };
+
+  const getCurrentLocationFromStorage = (): CityConfig | null => {
+    try {
+      const loc = localStorage.getItem('justweather_current_location');
+      if (loc) {
+        const parsed = JSON.parse(loc);
+        if (isValidCityConfig(parsed)) {
+          return parsed;
+        }
+      }
+    } catch (e) {
+      console.error('Error parsing current location from localStorage', e);
+    }
+    return null;
+  };
+
+  const [currentLocation, setCurrentLocationState] = useState<CityConfig>(() => {
+    const stored = getCurrentLocationFromStorage();
+    return stored || initialBangalore;
+  });
+
+  const [savedLocations, setSavedLocations] = useState<CityConfig[]>(() => {
+    const stored = getSavedLocationsFromStorage();
+    return stored || [initialBangalore, initialIndore];
+  });
   
   const [selectedTime, setSelectedTime] = useState<number>(() => {
     const now = new Date();
@@ -71,10 +121,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [selectedTime, weatherData]);
 
-  // Initialize saved locations on mount with Bangalore and Indore
+  // Synchronize state changes to localStorage
   useEffect(() => {
-    setSavedLocations([initialBangalore, getIndore()]);
-  }, []);
+    try {
+      localStorage.setItem('justweather_current_location', JSON.stringify(currentLocation));
+    } catch (e) {
+      console.error('Error saving current location to localStorage', e);
+    }
+  }, [currentLocation]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('justweather_saved_locations', JSON.stringify(savedLocations));
+    } catch (e) {
+      console.error('Error saving saved locations to localStorage', e);
+    }
+  }, [savedLocations]);
 
   const [interactionState, setInteractionState] = useState<InteractionState>({
     mousePosition: { x: 0, y: 0 },
@@ -101,6 +163,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setSavedLocations(prev => prev.filter(l => l.id !== cityId));
   };
 
+  const syncToCurrentTime = () => {
+    const now = new Date();
+    setSelectedTime(now.getHours() * 60 + now.getMinutes());
+    refreshWeather().catch(err => console.error('Error refreshing weather on sync:', err));
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -115,6 +183,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setSelectedTime,
         predictedTemperature,
         setPredictedTemperature,
+        syncToCurrentTime,
       }}
     >
       {children}
