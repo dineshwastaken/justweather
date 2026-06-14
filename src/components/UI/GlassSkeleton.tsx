@@ -83,7 +83,7 @@ export const GlassSkeleton: React.FC = () => {
           <div className="w-20 h-3 bg-white/[0.06] rounded" />
         </div>
 
-        <div className="overflow-x-auto w-full no-scrollbar pb-3">
+        <div className="overflow-x-auto w-full custom-scrollbar pb-3">
           <div className="flex gap-4 min-w-max">
             {Array.from({ length: 6 }).map((_, i) => (
               <GlassCard key={i} className="w-36 p-4 flex flex-col items-center text-center justify-between h-56 animate-pulse">

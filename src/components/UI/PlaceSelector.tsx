@@ -19,7 +19,7 @@ export const PlaceSelector: React.FC = () => {
       </div>
       
       {/* Horizontal pill list of Indian cities */}
-      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 py-1 px-1 justify-start md:justify-center border border-white/10 bg-black/30 rounded-full h-12 backdrop-blur-md">
+      <div className="flex items-center gap-2 overflow-x-auto custom-scrollbar pb-1 py-1 px-1 justify-start md:justify-center border border-white/10 bg-black/30 rounded-full h-12 backdrop-blur-md">
         {cities.map((city) => {
           const isActive = city.id === selectedCityId;
           return (

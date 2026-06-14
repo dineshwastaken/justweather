@@ -61,7 +61,7 @@ function WeatherAppContent() {
 
       {/* 3. Liquid Glass UI Layout Layer */}
       {/* Root layout has pointer-events-none to let scroll/hover pass into the 3D Canvas */}
-      <div className="absolute inset-0 w-full h-full flex flex-col justify-between p-4 md:p-6 overflow-y-auto no-scrollbar pointer-events-none z-10">
+      <div className="absolute inset-0 w-full h-full flex flex-col justify-between p-4 md:p-6 overflow-y-auto custom-scrollbar pointer-events-none z-10">
         
         {/* App Header Bar */}
         <header className="w-full max-w-4xl mx-auto flex items-center justify-between pointer-events-auto py-1">

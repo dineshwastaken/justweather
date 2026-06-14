@@ -148,7 +148,7 @@ export const LocationManager: React.FC = () => {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute left-0 right-0 top-full mt-2 rounded-2xl bg-[#090d16]/95 border border-white/15 shadow-[0_15px_30px_rgba(0,0,0,0.65)] overflow-hidden z-50 backdrop-blur-xl max-h-60 overflow-y-auto no-scrollbar"
+                    className="absolute left-0 right-0 top-full mt-2 rounded-2xl bg-[#090d16]/95 border border-white/15 shadow-[0_15px_30px_rgba(0,0,0,0.65)] overflow-hidden z-50 backdrop-blur-xl max-h-60 overflow-y-auto custom-scrollbar"
                   >
                     <div className="p-2 border-b border-white/5 text-[10px] font-mono text-white/40 tracking-wider">
                       SUGGESTIONS ({suggestions.length})

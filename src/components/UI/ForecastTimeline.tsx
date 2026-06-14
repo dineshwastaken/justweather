@@ -51,7 +51,7 @@ export const ForecastTimeline: React.FC<ForecastTimelineProps> = ({ forecastList
       </div>
 
       {/* Horizontally scrollable glass wrap */}
-      <div className="overflow-x-auto w-full no-scrollbar pb-3 snap-x scroll-smooth">
+      <div className="overflow-x-auto w-full custom-scrollbar pb-3 snap-x scroll-smooth">
         <div className="flex gap-4 min-w-max px-1">
           {forecastList.map((day, idx) => (
             <motion.div

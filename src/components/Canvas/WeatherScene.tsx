@@ -827,7 +827,7 @@ export const WeatherScene: React.FC<WeatherSceneProps> = ({ weatherType, windSpe
   }, [weatherType, decimalHour]);
 
   return (
-    <div className="absolute inset-0 w-full h-full pointer-events-auto select-none z-0">
+    <div className="absolute inset-0 w-full h-full pointer-events-auto select-none z-0" style={{ touchAction: 'none' }}>
       <Canvas
         shadows
         camera={{ position: [0, 0, 10], fov: 60 } as any}
