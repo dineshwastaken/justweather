@@ -1,0 +1,6 @@
+{
+  "name": "Just Weather",
+  "description": "A highly premium immersive 3D WebGL 'Just Weather' platform with liquid glass interactions, real-time satellite meteorology, user search, custom bookmarks, and procedural synthesised thunder audio cues.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
